@@ -1,5 +1,5 @@
 # fMakefile
----
+
 Ready to use Makefile for simple Fortran projects with
 automatic targets and prerequisites (module dependencies)
 
