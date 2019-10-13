@@ -277,7 +277,8 @@ $(1) : $(SRCDIR)/%.$(FEXT)
 	$(AWK) '$$(call awk_make_dep)' < $$< \
 	    | sed -e 'i\ $(objmoddir)/' -e 'a\.o' \
 	    | tr -d '\n' \
-	    >> $$@
+	    >> $$@ && \
+	echo >> $$@
 endef
 $(eval $(call template_target_dep,$(depbindir)/%.d))
 $(eval $(call template_target_dep,$(depobjdir)/%.o.d))
