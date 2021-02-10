@@ -155,30 +155,29 @@ dep_mods_o := $(subst $(SRCDIR),$(depobjdir),$(src_mods:.$(FEXT)=.o.d))
 
 deps := $(dep_exes) $(dep_exes_o) $(dep_tests) $(dep_tests_o) $(dep_mods_o)
 
-# ENV: CFLAGS = gcc-inherited flags
-#      FFLAGS = gfortran-specific flags
+# ENV: FFLAGS  = flags to give to the compiler (e.g -g, -O, -std, -fdec)
+#      LDFLAGS = flags to give to the linker (e.g -L, -r)
+#      LDLIBS  = library flags to give to the linker (i.e -l...)
 #
-# These flags are built in such a way that the user can, without editing the
-# Makefile, either ADD TO THEM or OVERRIDE THEM. To add to them, have the
-# desired variables exported to make. To override them, put them in the make
-# command, as the first argument. Examples:
+# These flags are built in such a way that the user can either ADD TO THEM or
+# OVERRIDE THEM without editing the Makefile, if that is desired.
 #
-#     - Adding to them:  "CFLAGS='-g -O' make exes"
-#     - Overriding them: "make CFLAGS='-g -O' exes"
+# - To ADD to them, have the desired variables exported to make.
+# - To OVERRIDE them, put them in the make command as the first argument.
 #
-# As mentioned above, we create FFLAGS. Flags that have a meaning for gfortran
-# should go here, instead of in CFLAGS.
+# Examples:
 #
-# The point of having DEBUG and RELEASE becomes clear here.
+#     - Add to:           $ FFLAGS='-g -O' make exes
+#     - Override them:    $ make FFLAGS='-g -O' exes
 
-CFLAGS_ :=
 FFLAGS_ := -Wall -Wextra -Wconversion-extra -pedantic \
-            -std=f2008 -fimplicit-none -J$(moddir)
-CFLAGS.debug := -g3 -Og
-FFLAGS.debug := -ffpe-trap=invalid,zero,overflow,underflow,denormal -fcheck=all
-CFLAGS.release := -O2
-FFLAGS.release :=
-CFLAGS := $(CFLAGS_) $(CFLAGS.$(BUILD)) $(CFLAGS)
+           -std=f2008 -fimplicit-none -J$(moddir)
+
+FFLAGS.debug := -g3 -Og -fcheck=all \
+                -ffpe-trap=invalid,zero,overflow,underflow,denormal
+
+FFLAGS.release := -O2
+
 FFLAGS := $(FFLAGS_) $(FFLAGS.$(BUILD)) $(FFLAGS)
 
 LDFLAGS_ :=
