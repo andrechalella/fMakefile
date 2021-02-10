@@ -3,7 +3,7 @@
 # fMakefile - Ready to use Makefile for simple Fortran projects
 # with automatic targets and prerequisites (module dependencies)
 #
-# Copyright (c) 2019 Andre Chalella
+# Copyright (c) 2019 André Chalella
 # MIT License - see file LICENSE for full text
 #
 # fMakefile needs no modification to work with any simple Fortran project,
