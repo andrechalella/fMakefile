@@ -171,7 +171,7 @@ deps := $(dep_exes) $(dep_exes_o) $(dep_tests) $(dep_tests_o) $(dep_mods_o)
 #     - Override them:    $ make FFLAGS='-g -O' exes
 
 FFLAGS_ := -Wall -Wextra -Wconversion-extra -pedantic \
-           -std=f2008 -fimplicit-none -J$(moddir)
+           -std=f2018 -fimplicit-none -J$(moddir)
 
 FFLAGS.debug := -g3 -Og -fcheck=all \
                 -ffpe-trap=invalid,zero,overflow,underflow,denormal
