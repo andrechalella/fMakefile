@@ -351,7 +351,7 @@ $(depmoddir)/%.d : $(depmoddir)/%.use
 $(DEPDIR)/%.use : $(SRCDIR)/%.$(FEXT)
 	$(dr_start)
 	echo -n " => "
-	$(AWK) '$(call awk_make_dep)' < $< > $@
+	$(AWK) '$(call awk_make_dep)' $< > $@
 
 $(depmoddir)/%.chain : $(srcmoddir)/%.$(FEXT) | $(depmoddir)/%.d
 	$(dr_start)
