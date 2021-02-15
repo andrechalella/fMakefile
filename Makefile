@@ -410,7 +410,7 @@ distclean: clean cleandeps
 
 cleancopies:
 	@ for copy in $(basenames); do
-	    if [ -f $$copy ]; then echo "rm $$copy" && rm $$copy; fi; done
+	    if [[ -f $$copy ]]; then echo "rm $$copy" && rm $$copy; fi; done
 
 # Target to remove all the comments from this Makefile.
 
@@ -433,6 +433,14 @@ $(src_exes) $(src_mods) $(src_tests) Makefile : ;
 # in a different shell, which would force us to join all commands with &&.
 
 .ONESHELL:
+
+# "So generally the right thing to do is to delete the target file if the
+# recipe fails after beginning to change the file. make will do this if
+# .DELETE_ON_ERROR appears as a target. This is almost always what you want make
+# to do, but it is not historical practice; so for compatibility, you must
+# explicitly request it." -- GNU make manual
+
+.DELETE_ON_ERROR:
 
 # Include all dependency Makefiles (.d files)
 #
