@@ -92,7 +92,7 @@ COLOR_LINK := \e[1;49;32m
 COLOR_DONE := \e[1;49;35m
 COLOR_NONE := \e[0m
 
-MSG_DONE = 'Finished making $<'
+MSG_DONE = 'Finished making $@'
 
 # DIRECTORY STRUCTURE
 #
@@ -240,7 +240,7 @@ $(basename_mods_o) : % : $(moddir)/%   ;   $(copy_cmd)
 
 # Pattern rule for linking program binaries.
 
-% : %.o
+$(builddir)/% : $(builddir)/%.o
 	@ echo -en '$(COLOR_LINK)Linking $*:$(COLOR_NONE) '
 	$(mkdir_this)
 	echo '$(link_cmd)' && $(link_cmd)
