@@ -148,10 +148,12 @@ basename_exes := $(call real_basename,$(src_exes))
 basename_mods := $(call real_basename,$(src_mods))
 basename_tests := $(call real_basename,$(src_tests))
 
+basename_exes_o := $(addsuffix .o,$(basename_exes))
 basename_mods_o := $(addsuffix .o,$(basename_mods))
+basename_tests_o := $(addsuffix .o,$(basename_tests))
 
-basenames := $(basename_exes) $(basename_tests) \
-             $(basename_mods) $(basename_mods_o)
+basenames := $(basename_exes) $(basename_mods) $(basename_tests) \
+             $(basename_exes_o) $(basename_mods_o)  $(basename_tests_o)
 
 # All dependency Makefiles (.d files), with directories and extensions.
 
@@ -233,10 +235,12 @@ deps:  $(deps)
 # 'make cleancopies' will remove all these from the project root. All (relevant)
 # cleaning targets include it though, so you'll rarely need to call it directly.
 
-$(basename_exes)   : % : $(builddir)/% ; @ $(basename_done_cmd)
-$(basename_tests)  : % : $(testdir)/%  ; @ $(basename_done_cmd)
-$(basename_mods)   : % : %.o           ; @ $(basename_done_cmd_o)
-$(basename_mods_o) : % : $(moddir)/%   ;   $(copy_cmd)
+$(basename_exes)    : % : $(builddir)/% ; @ $(basename_done_cmd)
+$(basename_exes_o)  : % : $(builddir)/% ; @ $(basename_done_cmd)
+$(basename_tests)   : % : $(testdir)/%  ; @ $(basename_done_cmd)
+$(basename_tests_o) : % : $(testdir)/%  ; @ $(basename_done_cmd)
+$(basename_mods)    : % : %.o           ; @ $(basename_done_cmd_o)
+$(basename_mods_o)  : % : $(moddir)/%   ;   $(copy_cmd)
 
 # Pattern rule for linking program binaries.
 
