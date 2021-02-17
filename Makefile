@@ -27,7 +27,7 @@
 #     4) Directory structure:
 #
 #            PROJECT ROOT      MAKEFILE VARIABLE     DESCRIPTION
-#            ├── Makefile      -                     This file
+#            ├── Makefile      -                     This file (or its parent)
 #            ├── src           SRCDIR                Program sources
 #            │   ├── mod       MODDIR_SUFFIX         Module sources
 #            │   └── test      TESTDIR_SUFFIX        Test program sources
@@ -211,8 +211,9 @@ mkdir_this = $(MKDIR) $(@D)
 ###     RULES     ###
 #####################
 
-# Main phony rules. First is default ("all").
+# Main phony rules.
 
+.DEFAULT_GOAL := all
 all:   exes tests
 exes:  $(basename_exes)
 tests: $(basename_tests)
@@ -416,20 +417,28 @@ cleancopies:
 	@ for copy in $(basenames); do
 	    if [[ -f $$copy ]]; then echo "rm $$copy" && rm $$copy; fi; done
 
-# Target to remove all the comments from this Makefile.
+# Current Makefile invocation path. This is a deferred variable, so any Makefile
+# can use it -- but this only works until an 'include' directive is executed.
 
-stripmakefile:
-	sed 's/^# .*$$\|^#$$//' Makefile | cat -s > Makefile.tmp
-	mv -f Makefile.tmp Makefile
+THIS_MAKEFILE = $(lastword $(MAKEFILE_LIST))
+
+# Target to remove all the comments from this Makefile.
+#
+# We use a target-specific variable to fix the THIS_MAKEFILE value, since inside
+# the recipe its expansion is deferred.
+
+stripmakefile : THIS_MAKEFILE := $(THIS_MAKEFILE)
+stripmakefile :
+	sed -i -E '/^#($$|[^!])/d' $(THIS_MAKEFILE)
 
 .PHONY: all exes tests mods deps $(clean_targets) stripmakefile
 
 # Optimize by telling make it doesn't know how to make our original files --
 # that is, it's not supposed to search for implicit rules for them.
 
-$(src_exes) $(src_mods) $(src_tests) Makefile : ;
+$(THIS_MAKEFILE) $(src_exes) $(src_mods) $(src_tests) : ;
 
-# Prevent deletion of .use and .chain files.
+# Prevent deletion of .use, .chain and any other intermediate file.
 
 .SECONDARY:
 

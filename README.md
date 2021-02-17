@@ -44,6 +44,9 @@ Examples: `make main_prog`, `make mod_calculate`, `make test_fourier_8`
 - Default target makes all exes and tests (`make` or `make all`).
 - Colorized output for each build step.
 - Two sets of build configs (compiler/linker flags): DEBUG and RELEASE.
+- Variable `THIS_MAKEFILE` (deferred) provided so any other included Makefile
+  can find its own invocation path. Warning: it must be used before any
+  `include` statement).
 
 ### Limitations:
 
@@ -80,6 +83,7 @@ Here's the default directory structure, with the variables for customization:
 The structure is customizable, but has some rules itself, which might require
 bigger patches if they must be flexibilized:
 
+- **fMakefile** must be run (or included) from the project root
 - Program sources go in the source root.
 - Module sources go one level below source root. Test program sources too.
 - Build tree is standalone, as well as dependencies tree.
@@ -99,7 +103,7 @@ Main targets:
 
 Misc targets:
 
-    stripmakefile   remove comments from fMakefile (shrinks size to 30%).
+    stripmakefile   remove comments from fMakefile (cuts size by half)
 
 Debug targets:
 
