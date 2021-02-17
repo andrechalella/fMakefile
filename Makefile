@@ -323,9 +323,9 @@ $(depmoddir)/%.d : $(depmoddir)/%.use
 	$(dr_start)
 	$(dr_truncate_target)
 	
-	# build/debug/program.o : build/debug/mod/mod1.o [...]
+	# $(moddir)/mod1.o : $(moddir)/mod2.o [...]
 	
-	$(call dr_rule_from_use,$(moddir)/$(@F:.d=.o),$(moddir),.o)
+	$(call dr_rule_from_use,$$(moddir)/$(@F:.d=.o),$$(moddir),.o)
 	
 	# dep/mod/mod1.chain : dep/mod/mod2.chain [...]
 	
@@ -338,19 +338,19 @@ $(depmoddir)/%.d : $(depmoddir)/%.use
 	$(dr_check_guard)
 	
 	$(dr_truncate_target)
-	target=$(subst $(DEPDIR),$(builddir),$(@:.d=))
+	target='$(subst $(DEPDIR),$$(builddir),$(@:.d=))'
 	
-	# build/debug/program.o : build/debug/mod/mod1.o [...]
+	# $(builddir)/program.o : $(moddir)/mod1.o [...]
 	
-	$(call dr_rule_from_use,$$target.o,$(moddir),.o)
+	$(call dr_rule_from_use,'"$$target.o"',$$(moddir),.o)
 	
-	# build/debug/program.o : build/debug/mod/mod1.o [...]
+	# $(builddir)/program : $(moddir)/mod1.o [...]
 	
 	echo -n "$$target :" >> $@
 	for dep in $$(cat $<); do
 	    echo $$dep
 	    cat $(depmoddir)/$$dep.chain
-	done | sort | uniq | $(call dr_sed_tr,$(moddir),.o) >> $@
+	done | sort | uniq | $(call dr_sed_tr,$$(moddir),.o) >> $@
 	echo >> $@
 	
 	echo
@@ -395,7 +395,7 @@ endef
 
 define dr_rule_from_use
 	{
-	    echo -n "$(1) :"
+	    echo -n '$(1) :'
 	    $(call dr_sed_tr,$(2),$(3)) < $<
 	    echo
 	} >> $@
