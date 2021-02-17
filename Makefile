@@ -305,11 +305,18 @@ $(builddir)/%.o : $(SRCDIR)/%.$(FEXT)
 guardfile := $(DEPDIR)/guard
 
 ifneq ($(MAKE_RESTARTS),)
-$(info $(shell \
-        echo -n "Restarting make ($(MAKE_RESTARTS))" && \
-        if [[ -n "$$(rm -fv $(guardfile))" ]]; then \
-            echo -n ' (removed guard)'; fi && echo \
-    ))
+
+    $(info $(shell \
+            echo -n "Restarting make ($(MAKE_RESTARTS))" && \
+            [[ -n "$$(rm -fv $(guardfile))" ]] && \
+            echo -n ' (removed guard)'; \
+            echo \
+        ))
+
+else ifneq "$(shell rm -fv $(guardfile))" ""
+
+    $(info Removed leftover guard!)
+
 endif
 
 $(depmoddir)/%.d : $(depmoddir)/%.use
@@ -461,14 +468,21 @@ $(THIS_MAKEFILE) $(src_exes) $(src_mods) $(src_tests) : ;
 # about building. That is, when goal is one of: clean*, deps and stripmakefile.
 # 'deps' is in that list only because, if it isn't, when 'make deps' is called,
 # all deps will already be built when make gets to the deps target, prompting a
-# bizarre "Nothing to be done for 'deps'" to show right after building all deps.
+# strange "Nothing to be done for 'deps'" to show right after building all deps.
+#
+# However, when making the 'deps' goal, some deps are needed, thus those are
+# included (in the 'else ifeq' clause). They are the .d files of the mods and
+# the .d.d files of the programs.
 
 ifneq "$(or \
-        $(if $(MAKECMDGOALS),,true), \
-        $(filter-out $(clean_targets) deps stripmakefile, $(MAKECMDGOALS)) \
-    )" ""
+        $(if $(MAKECMDGOALS),,true),$(filter-out \
+            $(clean_targets) deps stripmakefile,$(MAKECMDGOALS)))" ""
 
     include $(deps)
+
+else ifeq "$(filter deps,$(MAKECMDGOALS))" "deps"
+
+    include $(filter-out $(dep_exes) $(dep_tests),$(deps))
 
 endif
 
