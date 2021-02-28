@@ -357,6 +357,7 @@ $(depmoddir)/%.d : $(depmoddir)/%.use
 
 %.d.d : %.use
 	$(dr_start)
+	$(dr_truncate_target)
 	$(call dr_rule_from_use,$(basename $@),$(depmoddir),.chain)
 	$(dr_create_guard)
 
