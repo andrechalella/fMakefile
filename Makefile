@@ -85,11 +85,12 @@ RMDIR := rm -rf
 
 # Colors for distinguishing the build steps from the myriad of build commands.
 # Google "shell colors" for complete reference of color codes.
-# Default is: Light Blue, Light Green, Light Purple (looks great in my setup).
+# Default is: HI Blue, HI Green, Yellow, HI White (HI = High Intensity).
 
-COLOR_COMPILE := \e[1;49;34m
-COLOR_LINK := \e[1;49;32m
-COLOR_DONE := \e[1;49;35m
+COLOR_COMPILE := \e[94m
+COLOR_LINK := \e[92m
+COLOR_COPY := \e[33m
+COLOR_DONE := \e[97m
 COLOR_NONE := \e[0m
 
 MSG_DONE = 'Finished making $@'
@@ -202,8 +203,9 @@ compile_cmd = $(FC) $(CFLAGS) $(FFLAGS) -c $< -o $@
 link_cmd = $(FC) $(CFLAGS) $(FFLAGS) -o $@ $(LDFLAGS) $^ $(LDLIBS)
 copy_cmd = cp -f $< $@
 symlink_cmd = ln -sf $< $@
+copy_cmd_echo = $(COLOR_COPY)cp$(COLOR_NONE) -f $< $@
 done_cmd = echo -e '$(COLOR_DONE)$(MSG_DONE)$(COLOR_NONE)'
-basename_done_cmd = echo '$(copy_cmd)' && $(copy_cmd) && $(done_cmd)
+basename_done_cmd = echo -e '$(copy_cmd_echo)' && $(copy_cmd) && $(done_cmd)
 basename_done_cmd_o = echo '$(symlink_cmd)' && $(symlink_cmd) && $(done_cmd)
 mkdir_this = $(MKDIR) $(@D)
 
@@ -307,7 +309,8 @@ guardfile := $(DEPDIR)/guard
 ifneq ($(MAKE_RESTARTS),)
 
     $(info $(shell \
-            echo -n "Restarting make ($(MAKE_RESTARTS))" && \
+            echo -en "$(COLOR_DONE)Restarting make" \
+                "($(MAKE_RESTARTS))$(COLOR_NONE)" && \
             [[ -n "$$(rm -fv $(guardfile))" ]] && \
             echo -n ' (removed guard)'; \
             echo \
@@ -315,7 +318,7 @@ ifneq ($(MAKE_RESTARTS),)
 
 else ifneq "$(shell rm -fv $(guardfile))" ""
 
-    $(info Removed leftover guard!)
+    $(info Warning: leftover guard found (removed).)
 
 endif
 
@@ -338,7 +341,7 @@ $(depmoddir)/%.d : $(depmoddir)/%.use
 	$(dr_check_guard)
 	
 	$(dr_truncate_target)
-	target='$(subst $(DEPDIR),$$(builddir),$(@:.d=))'
+	target='$(patsubst $(DEPDIR)/%,$$(builddir)/%,$(@:.d=))'
 	
 	# $(builddir)/program.o : $(moddir)/mod1.o [...]
 	
