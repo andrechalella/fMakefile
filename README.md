@@ -1,17 +1,36 @@
 # fMakefile
 
-Ready to use Makefile for simple Fortran projects,
-featuring automatic targets and prerequisites
+_Ready-to-use Makefile for simple Fortran projects,
+featuring **automatic targets** and **dependency resolution**._
 
-Copyright (c) 2019 André Chalella \
-MIT License - see file LICENSE for full text
+<sub>Copyright (c) 2019-2021 André Chalella</sub> \
+<sup>MIT License - see file LICENSE for full text</sup>
+
+## Overview
+
+**fMakefile** is a Makefile for **GNU make** that can be invoked without
+modifications and will build your Fortran programs just right, as long as your
+project follows a few ground rules. It is intended for simple projects, where
+you have a few programs, a few modules and needs everything statically linked.
+
+Suppose your source files live in `proj/src` -- just call **fMakefile** with
+`make` from your `proj` directory, and it shall figure everything out
+automatically.
+
+Under the hood, **fMakefile** contains (other than **GNU make** makefile code)
+**bash** and **awk** scripts that automate everything, all embedded into a
+single file for convenience. It generates many tiny makefiles in the `dep/` tree
+that represent the dependencies in your project, and builds stuff into the
+`build/` tree.
+
+Main features:
 
 ## Overview
 
 **fMakefile** needs no modification to work with any simple Fortran project.
 
-As long as your project abides to the rules that define "simple" (explained
-below), you can just put this Makefile in your project root and run
+As long as your project abides to the rules below), you can just put this
+Makefile in your project root and run
 
     $ make
 
@@ -20,158 +39,217 @@ to compile and link all your programs. You can also run
     $ make myprog
 
 to compile and link a program defined in `src/myprog.f90`. There are many other
-possibilites, documented below.
+possibilites (see the **Examples** section).
 
-**fMakefile** accomplishes the correct prerequisite generation through static
-source code scanning (small embedded **awk** script). Prerequisites are then
-stored in small auxiliary Makefiles (**.d** files) in a separate tree, and are
-read and updated (or recreated) automatically by **make** as needed. Compilation
-order is then resolved naturally by **make**.
+**fMakefile** accomplishes the correct prerequisite resolution through static
+source code scanning via a small embedded **awk** script. Prerequisites are then
+stored in small auxiliary Makefiles in the `dep/` tree, and are read and updated
+automatically by **fMakefile** as needed.
 
-**fMakefile** builds everything into a *build* directory tree, and later copies
+Compilation order is then resolved naturally by **make**.  There is no magic,
+just plain **GNU make**.
+
+**fMakefile** builds everything into a `build` directory tree, and later copies
 binaries into the project root. Upon *clean*ing, all these are done away with.
 
-For implementation details, read the (heavily commented) Makefile.
+_For details, read the heavily commented Makefile._
 
-### Features:
+### Features
 
-- Dependency lookup through static source scan, with support for
-chained dependencies (*a.mod* uses *b.mod* uses *c.mod*...).
-- Automatic targets for fully building each individual source file.
-Examples: `make main_prog`, `make mod_calculate`, `make test_fourier_8`
-- Phony targets: `make exes` makes all programs, `make tests` makes all tests
-(not that tests aren't programs, it's just a way to tell them apart).
-- Default target makes all exes and tests (`make` or `make all`).
+- Dependency resolution that supports chained dependencies (*program* uses
+  *mod1* which uses *mod2* which uses *mod3* -- and everything just works!)
+- Automatic targets for fully building each individual source file and more (see
+  **Examples**).
 - Colorized output for each build step.
 - Two sets of build configs (compiler/linker flags): DEBUG and RELEASE.
 - Variable `THIS_MAKEFILE` (deferred) provided so any other included Makefile
-  can find its own invocation path. Warning: it must be used before any
+  can find its own invocation path (note: it must be used before any
   `include` statement).
+- Customizable build flags, directory names etc.
 
-### Limitations:
+### Requirements
 
-- You must choose one source file extension (variable `FEXT`) and stick
-  with it. I chose **.f90**, for instance. This hinders use of automatic
-  preprocessing detection in most compilers, however you can turn it
-  always on (`-cpp` flag in GFortran).
+- **GNU make**
+- **GNU coreutils** (`grep`, `sort`, `uniq`...)
+- **bash**
 
-## Rules
+### Rules
 
-**fMakefile** is made for simple projects, which, in this case, means:
+1. Each source file must contain one complete program or module.
+2. Module names must be the same as their source file names.
+3. Directory structure below must be observed.
 
-1. Each source file contains one complete program (or module), nothing more.
-2. Module names are the same as their source file names.
-3. Programs are statically linked with their dependencies (modules).
-4. Directory structure as below.
+**fMakefile** required directory structure:
 
-### Directory structure
+    PROJECT ROOT     MAKEFILE VARIABLE     DESCRIPTION
+    ├── Makefile     -                     This file (or its parent)
+    ├── src          SRCDIR                Program sources
+    │   └── mod      MODDIR_SUFFIX         Module sources
+    ├── build        BUILDDIR_PREFIX       Binaries and .mod files
+    └── dep          DEPDIR                Dependency Makefiles (.d)
 
-Here's the default directory structure, with the variables for customization:
+- `build` and `dep` are autogenerated.
+- All modules must be in `mod`, without subdirectories.
+- Programs may be in subdirectories in `src` (except `mod`).
+- All names are customizable (vars above).
+- All source files must use the same suffix (extension), by default `.f90`
+  (customizable in the `FEXT` variable).
 
-    PROJECT ROOT          CUSTOMIZABLE VAR     FULL PATH VARIABLE  AUTOGENERATED?
-    ├─ build              BUILDDIR_PREFIX      -                        yes
-    │  └─ debug|release   BUILD [env]          builddir                 yes
-    │      ├─ mod          see 'src' tree      moddir                   yes
-    │      └─ test         see 'src' tree      testdir                  yes
-    ├─ dep                DEPDIR               -                        yes
-    │  ├─ mod              see 'src' tree      depmoddir                yes
-    │  └─ test             see 'src' tree      -                        yes
-    └─ src                SRCDIR               srcexedir                 -
-       ├─ mod             MODDIR_SUFFIX        srcmoddir                 -
-       └─ test            TESTDIR_SUFFIX       srctestdir                -
+### Examples
 
-The structure is customizable, but has some rules itself, which might require
-bigger patches if they must be flexibilized:
+Assume the following project tree:
 
-- **fMakefile** must be run (or included) from the project root
-- Program sources go in the source root.
-- Module sources go one level below source root. Test program sources too.
-- Build tree is standalone, as well as dependencies tree.
+    proj
+    ├── Makefile
+    └── src
+        ├── mod
+        │   ├── mod1.f90
+        │   └── mod2.f90
+        └── program.f90
 
-The *build* and *dep* trees replicate the *src* tree.
+*Makefile* is **fMakefile** (simplest approach) *or* a Makefile that *includes*
+**fMakefile** (recommended approach, since this way you can extend **fMakefile**
+without directly modifying it).
 
-## Targets
+Run `make` from the project root:
 
-Main targets:
+    $ cd /path/to/proj
+    $ make
 
-    all             default target, makes 'exes' plus 'tests'
-    exes            all programs in source root
-    tests           all programs in test dir
-    clean           cleans everything but the dependency Makefiles
-    finalclean      cleans everything but the binaries in project root
-    distclean       cleans everything
+And an executable named `program` will show up in your project root:
 
-Misc targets:
+    proj
+    ├── build/
+    ├── dep/
+    ├── src/
+    ├── Makefile
+    └── program
 
-    stripmakefile   remove comments from fMakefile (cuts size by half)
+### Many programs
 
-Debug targets:
+Assume the following project tree:
 
-    mods            all modules
-    deps            dependency Makefiles (.d files) that go in 'deps' dir
-    cleanbuild      removes build directory ($(builddir)) plus copies in project
-                    root
-    cleancopies     removes binary copies in project root
-    cleandeps       removes autogenerated dependency Makefiles (.d files)
+    proj
+    ├── Makefile
+    └── src
+        ├── mod
+        │   ├── mod1.f90
+        │   └── mod2.f90
+        ├── test
+        │   ├── test1.f90
+        │   └── test2.f90
+        ├── program1.f90
+        └── program2.f90
 
-### Automatic targets
+Running `make` will build **all programs** and put them in your project root:
 
-You can fully build (compile and link) an individual program with:
+    $ make
 
-    $ make program
+    proj
+    ├── build/
+    ├── dep/
+    ├── src/
+    ├── Makefile
+    ├── program1
+    ├── program2
+    ├── test1
+    └── test2
 
-This will compile and link `src/program.f90` into the build directory tree and
-copy the resulting binary to the project root.
+**fMakefile** can also build only specific targets:
 
-The same can be done with a test program:
+    $ make program1         # 'program1' is built and copied into project root
+    $ make test2            # 'test2' is built and copied into project root
+    $ make program1 test1   # 'program1' and 'test1' show up in project root
 
-    $ make test_a
+### Subdirectories
 
-This will make `src/test/test_a.f90`.
+For convenience, you can make all programs in one source subdirectory --
+recursively or not. Consider:
 
-You can also *only compile* a program with:
+    proj
+    ├── Makefile
+    └── src
+        ├── mod
+        │   ├── mod1.f90
+        │   └── mod2.f90
+        ├── program1.f90
+        ├── program2.f90
+        └── test
+            ├── test_sub_1
+            │   ├── ts1a.f90
+            │   └── ts1b.f90
+            ├── test_sub_2
+            │   ├── ts2a.f90
+            │   └── ts2b.f90
+            ├── test1.f90
+            └── test2.f90
 
-    $ make program.o
+Then you have some options:
 
-This will compile the program into the build tree and, afterwards, copy
-`program.o` into your project root.
+    $ make test/            # all directly under test (test1 and test2)
+    $ make test//           # two slashes means RECURSIVE, so this makes:
+                            #     test1 test2 ts1a ts1b ts2a ts2b
+    $ make test/test_sub_1/ # sure enough, this will make ts1a and ts1b
+    $ make test/test_sub_2/ # sure enough, this will make ts2a and ts2b
+    $ make .                # the dot is special syntax for 'only source root',
+                            # so this will make program1 and program2.
 
-The same can be done with any other source file.
+Note: the dot syntax recursive counterpart is, obviously, simply `make` with no
+arguments.
 
-*Note: when modules are built as goals (i.e not intermediate objects), they're
-copied to the project root as **.o files**, and a symbolic link (without the
-**.o** suffix) is created pointing to them.*
+### Object files
 
-## Dependency Makefiles (autogenerated .d files)
+You can tell **fMakefile** to only compile a specific source file, _be it a
+program or a module:_
 
-**fMakefile** dependency generation creates auxiliary Makefiles which merely
-state the dependencies themselves.
+    $ make program.o        # program.o shows up in your project root
+    $ make test1.o
+    $ make mod1.o
+    $ make mod2.o
+    $ make mod/             # compiles and copies all modules
 
-Each source file has one corresponding auxiliary Makefile (*.d* file) in the
-*dep* tree. This file is very simple and consists of one or two lines:
+### Making a RELEASE build
 
-- Line 1: dependencies needed for **compiling**.
-- Line 2: dependencies needed for **linking** -- as such, modules won't have
-  this line.
+By default, **fMakefile** will make a _debug_ build, with debug compiler flags
+and into the `build/debug/` tree. To change the build type, just set the `BUILD`
+variable:
 
-An example file `dep/program.d` would be:
+    $ BUILD=release make            # option 1 (shell variable)
+    $ export BUILD=release; make    # option 2 (shell variable)
+    $ make BUILD=release            # option 3 (make variable)
 
-    $(builddir)/program.o : $(moddir)/mod1.o
-    $(builddir)/program : $(moddir)/mod1.o $(moddir)/mod2.o
+Note: you may need to run `make cleancopies` for **fMakefile** to start a
+different build type if your project root contains built files from the old
+build type, else you may get the `Nothing to be done for '...'` message.
 
-In the above example, `program` explicitly USEs `mod1`. This module, in turn,
-USEs `mod2`. As such, only `mod1.o` is needed for **compiling** `program`, but,
-for **linking**, `mod2.o` is needed as well.
+### Cleaning
 
-*Note: technically, **mod1.o** is NOT needed for compiling **program.o**; what
-IS needed is **mod1.mod** -- which happens to be a byproduct of compiling
-**mod1.o**.*
+**fMakefile** has quite a number of phony goals for cleaning:
 
-There are other files that exist in the *dep* tree. They are involved in
-resolving chain dependencies:
+    $ make clean            # removes all files built and copied into the
+                            # project root, plus the build/ dir
+    $ make cleancopies      # removes all files copied into the project root
+    $ make distclean        # removes EVERYTHING fMakefile has put in your
+                            # project root, that is: copies, build/ and dep/
+    $ make finalclean       # removes build/ and dep/ (leaves copies)
 
-- **.d.d** files: they ensure all the chain dependencies are resolved before
-  generating the **.d** file.
-- **.use** files: they are the output of the extraction of USE statements (awk
-  script).
-- **.chain** files: they list all the (chained) dependencies of a module.
+There's even more, but these are for debugging mostly:
+
+    $ make cleanbuild       # removes build/(debug|release)/ + copies
+    $ make cleandeps        # removes dep/
+
+### Ambiguous names
+
+If your source tree has source files with the same name in different
+directories, you won't be able to specify the correct one with the basename
+syntax (`make program`).
+
+In this case, use this alternative syntax:
+
+    $ make path/to/program          # compile and link src/path/to/program.f90
+    $ make path/to/other/program.o  # same name, different subdir, just compile
+
+This way the full path is specified.
+
+Note: when this syntax is used, the result file is not copied to project root
+(that is, it stays in the `build/` tree).
