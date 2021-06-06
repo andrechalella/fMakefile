@@ -501,7 +501,6 @@ $(relpaths_all) : % : $(builddir)/%
 dr_start = @ $(mkdir_this); echo -n $@
 dr_truncate_target = : > $@
 dr_create_guard = : > $(guardfile); echo ' (created guard)'
-dr_echo_skipped = echo ' skipped (guard found)'
 dr_sed_tr = { sed 's|.*| $(1)/&$(2)|' | tr -d '\n'; }
 
 define dr_check_guard
