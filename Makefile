@@ -347,11 +347,16 @@ $(dep_mods_d) : %.d : %.use
 	
 	# $(moddir)/mod1.o : $(moddir)/mod2.o [...]
 	
-	$(call dr_rule_from_use,$$(moddir)/$(@F:.d=.o),$$(moddir),.o)
+	$(call dr_rule_from_use,$(patsubst \
+	    $(depmoddir)/%,$$(moddir)/%,$(@:.d=.o)),$$(moddir),.o)
 	
 	# dep/mod/mod1.chain : dep/mod/mod2.chain [...]
+	# Submodules must not have this line, since
+	# they are never part of a USE chain.
 	
-	$(call dr_rule_from_use,$(@:.d=.chain),$(depmoddir),.chain)
+	if [[ $@ =~ ^$(depmoddir)/[^/]+$$ ]]; then
+	    $(call dr_rule_from_use,$(@:.d=.chain),$(depmoddir),.chain)
+	fi
 	
 	$(dr_create_guard)
 
@@ -618,12 +623,18 @@ endif
 #
 # "USE, INTRINSIC" is ignored since it's the compiler's job to provide for it.
 #
-# Upon finding a match, it returns only the module name.
+# Submodules are considered too:
+#
+#     SUBMODULE ( mod1[:mod2[...]] ) submod
+#
+# Upon finding a match, it returns only the module name. For submodules,
+# "mod1/mod2/mod3" is returned (colons become slashes), matching fMakefile
+# source directory structure.
 #
 # Obvious limitations of this tool:
-#     - This tool needs the USE statement to be in one line up until <mod-name>.
-#     - This tool will be fooled by a USE statement that's part of a multi-line
-#       string, or something as contrived.
+#     - This tool needs the statement to be in one line up until <mod-name>.
+#     - This tool will be fooled by a matching statement that's part of a
+#       multi-line string, or something as contrived.
 
 define awk_make_dep
 BEGIN {                                          \
@@ -634,15 +645,24 @@ BEGIN {                                          \
     intrinsics["IEEE_FEATURES"];                 \
 };                                               \
                                                  \
-toupper($$0) ~ /^\s*USE[: \t]+[A-Z]/ {           \
+{ U = toupper($$0); }                            \
+                                                 \
+U ~ /^\s*USE[: \t]+[A-Z]/ {                      \
     gsub(/[,:]/, " ");                           \
     if ( ! (toupper($$2) in intrinsics) ) {      \
         print $$2;                               \
     }                                            \
 };                                               \
                                                  \
-toupper($$0) ~ /^\s*USE\s*,\s*NON_INTRINSIC/ {   \
+U ~ /^\s*USE\s*,\s*NON_INTRINSIC/ {              \
     gsub(/[,:]/, " ");                           \
     print $$3;                                   \
+}                                                \
+                                                 \
+U ~ /^\s*SUBMODULE\s+\(.*\)\s+[A-Z]/ {           \
+    match($$0, /\(.*\)/, s);                     \
+    gsub(/[() ]/, "", s[0]);                     \
+    gsub(/:/, "/", s[0]);                        \
+    print s[0];                                  \
 }
 endef
