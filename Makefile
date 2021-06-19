@@ -402,7 +402,7 @@ $(depmoddir)/%.chain : $(srcmoddir)/%.$(FEXT) | $(depmoddir)/%.d
 	basenames="$$(sed -E 's/[^ ]*\/([^.]*)[^ ]*/\1/g' <<< $$depchains)"
 	
 	{ echo $$basenames; cat $$depchains /dev/null; } | sed '/^$$/d' |
-	    sort | uniq > $@
+	    tr ' ' '\n' | sort | uniq > $@
 	
 	echo -n ', '
 
